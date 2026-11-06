@@ -70,9 +70,36 @@ stdenv.mkDerivation {
 
     mkdir -p $out/bin
 
-    # Wrap the binary in a clean startup script that forces XDG data sandboxing
-    # to prevent it from dropping unmanaged desktop shortcuts into ~/.local/share/applications/
-    makeWrapper $out/libexec/G3M $out/bin/g3m \
+    cat << 'EOF' > $out/bin/g3m
+    #!/usr/bin/env bash
+    ROGUE_FILE="$HOME/.local/share/applications/G3M.desktop"
+
+    # Background monitor to instantly wipe out the rogue file if G3M drops it
+    (
+        while sleep 0.2; do
+            if [ -f "$ROGUE_FILE" ]; then
+                if grep -q "libexec/G3M" "$ROGUE_FILE" 2>/dev/null; then
+                    rm -f "$ROGUE_FILE"
+                    update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+                    break
+                fi
+            fi
+        done
+    ) &
+    MONITOR_PID=$!
+
+    # Ensure monitor background process cleans up when we exit
+    trap "kill $MONITOR_PID 2>/dev/null" EXIT
+
+    # Run the actual wrapped binary
+    exec ${placeholder "out"}/libexec/G3M "$@"
+    EOF
+
+    substituteInPlace $out/bin/g3m --subst-var out
+    chmod +x $out/bin/g3m
+
+    # Wrap the binary with runtime libraries and search paths
+    wrapProgram $out/bin/g3m \
       --prefix LD_LIBRARY_PATH : ${
         lib.makeLibraryPath [
           libglvnd
@@ -89,8 +116,6 @@ stdenv.mkDerivation {
         ]
       } \
       --set XKB_CONFIG_ROOT ${xkeyboard-config}/share/X11/xkb \
-      --run "mkdir -p \$HOME/.cache/g3m-xdg/applications" \
-      --set XDG_DATA_HOME "\$HOME/.cache/g3m-xdg" \
       --prefix PATH : ${lib.makeBinPath [ xdg-utils ]}
 
     runHook postInstall
