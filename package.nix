@@ -68,20 +68,10 @@ stdenv.mkDerivation {
     install -Dm444 ${icon} $out/share/icons/hicolor/scalable/apps/g3m.svg
     install -Dm444 ${desktopFile} $out/share/applications/g3m.desktop
 
-    # Create bin directory and xdg-desktop-menu shim to block rogue G3M.desktop creation
     mkdir -p $out/bin
 
-    cat << 'EOF' > $out/bin/xdg-desktop-menu
-    #!/usr/bin/env bash
-    for arg in "$@"; do
-        if [[ "$arg" == *G3M.desktop* ]]; then
-            exit 0
-        fi
-    done
-    exec ${xdg-utils}/bin/xdg-desktop-menu "$@"
-    EOF
-    chmod +x $out/bin/xdg-desktop-menu
-
+    # Wrap the binary in a clean startup script that forces XDG data sandboxing
+    # to prevent it from dropping unmanaged desktop shortcuts into ~/.local/share/applications/
     makeWrapper $out/libexec/G3M $out/bin/g3m \
       --prefix LD_LIBRARY_PATH : ${
         lib.makeLibraryPath [
@@ -99,7 +89,9 @@ stdenv.mkDerivation {
         ]
       } \
       --set XKB_CONFIG_ROOT ${xkeyboard-config}/share/X11/xkb \
-      --prefix PATH : "$out/bin:${lib.makeBinPath [ xdg-utils ]}"
+      --run "mkdir -p \$HOME/.cache/g3m-xdg/applications" \
+      --set XDG_DATA_HOME "\$HOME/.cache/g3m-xdg" \
+      --prefix PATH : ${lib.makeBinPath [ xdg-utils ]}
 
     runHook postInstall
   '';
