@@ -45,7 +45,6 @@ let
     StartupWMClass=G3M
     Categories=Game;
     Keywords=gamemaker;mods;modding;deltarune;pizza tower;
-    MimeType=x-scheme-handler/g3m;x-scheme-handler/deltahub;
   '';
 in
 stdenv.mkDerivation {
@@ -69,43 +68,8 @@ stdenv.mkDerivation {
     install -Dm444 ${desktopFile} $out/share/applications/g3m.desktop
 
     mkdir -p $out/bin
-
-    cat << 'EOF' > $out/bin/g3m
-    #!/usr/bin/env bash
-    TARGET="$HOME/.local/share/applications/G3M.desktop"
-
-    (
-        while sleep 0.2; do
-            if [ -f "$TARGET" ] && ! grep -q "Exec=g3m" "$TARGET" 2>/dev/null; then
-                cat << 'DESKTOP' > "$TARGET"
-    [Desktop Entry]
-    Type=Application
-    Name=G3M
-    GenericName=GameMaker Mod Manager
-    Comment=Mod Manager for GameMaker games (Deltarune, Pizza Tower, ...)
-    Exec=g3m %U
-    Icon=g3m
-    Terminal=false
-    StartupNotify=true
-    StartupWMClass=G3M
-    Categories=Game;
-    Keywords=gamemaker;mods;modding;deltarune;pizza tower;
-    MimeType=x-scheme-handler/g3m;x-scheme-handler/deltahub;
-    DESKTOP
-                update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
-            fi
-        done
-    ) &
-    PID=$!
-    trap "kill $PID 2>/dev/null" EXIT
-
-    exec ${placeholder "out"}/libexec/G3M "$@"
-    EOF
-
-    substituteInPlace $out/bin/g3m --subst-var out
-    chmod +x $out/bin/g3m
-
-    wrapProgram $out/bin/g3m \
+    touch $out/bin/g3m
+    makeWrapper $out/libexec/G3M $out/bin/g3m \
       --prefix LD_LIBRARY_PATH : ${
         lib.makeLibraryPath [
           libglvnd
@@ -129,9 +93,18 @@ stdenv.mkDerivation {
 
   meta = with lib; {
     description = "Mod Manager for GameMaker games (Deltarune, Pizza Tower, ...)";
+    longDescription = ''
+      G3M is an open-source GUI mod manager for GameMaker games such as
+      Deltarune, Pizza Tower and Undertale. It handles downloading mods,
+      patching and restoring saves and game files. Packaged from the
+      official upstream release (PyInstaller build) with the PyQt6 runtime
+      libraries wrapped in for NixOS.
+    '';
     homepage = "https://github.com/y114git/G3M";
+    changelog = "https://github.com/y114git/G3M/releases/tag/${version}";
     license = licenses.gpl3Only;
     platforms = [ "x86_64-linux" ];
+    sourceProvenance = with sourceTypes; [ binaryNativeCode ];
     mainProgram = "g3m";
   };
 }
