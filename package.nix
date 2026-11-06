@@ -11,7 +11,11 @@
   wayland,
   xkeyboard-config,
   xcb-util-cursor,
-  xorg,
+  libxcb-util,
+  libxcb-image,
+  libxcb-keysyms,
+  libxcb-render-util,
+  libxcb-wm,
   xdg-utils,
 }:
 let
@@ -74,11 +78,11 @@ stdenv.mkDerivation {
           wayland
           xkeyboard-config
           xcb-util-cursor
-          xorg.xcbutil
-          xorg.xcbutilimage
-          xorg.xcbutilkeysyms
-          xorg.xcbutilrenderutil
-          xorg.xcbutilwm
+          libxcb-util
+          libxcb-image
+          libxcb-keysyms
+          libxcb-render-util
+          libxcb-wm
         ]
       } \
       --set XKB_CONFIG_ROOT ${xkeyboard-config}/share/X11/xkb \
