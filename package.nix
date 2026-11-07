@@ -35,7 +35,7 @@ let
   desktopFile = writeText "g3m.desktop" ''
     [Desktop Entry]
     Type=Application
-    Name=G3M-Flake
+    Name=G3M
     GenericName=GameMaker Mod Manager
     Comment=Mod Manager for GameMaker games (Deltarune, Pizza Tower, ...)
     Exec=g3m %U
@@ -65,7 +65,7 @@ stdenv.mkDerivation {
     install -Dm444 LICENSE $out/share/licenses/g3m/LICENSE
 
     install -Dm444 ${icon} $out/share/icons/hicolor/scalable/apps/g3m.svg
-    install -Dm444 ${desktopFile} $out/share/applications/g3m.desktop
+    install -Dm444 ${desktopFile} $out/share/applications/g3m-flake.desktop
 
     mkdir -p $out/bin
     touch $out/bin/g3m
