@@ -35,7 +35,7 @@ let
   desktopFile = writeText "g3m.desktop" ''
     [Desktop Entry]
     Type=Application
-    Name=G3M
+    Name=G3M-Flake
     GenericName=GameMaker Mod Manager
     Comment=Mod Manager for GameMaker games (Deltarune, Pizza Tower, ...)
     Exec=g3m %U
